@@ -43,6 +43,7 @@ export interface State {
   generation: number;         // The current generation index
 }
 
+// Create a generation of folks and set the first person to sick
 export const generatePeople = (state: State): Person[] =>
   new Array(PEOPLE)
     .fill({})
@@ -56,11 +57,15 @@ export const generatePeople = (state: State): Person[] =>
       sickness: state.infectionLength,
     }));
 
+// Update all the people for a generation
 export const runGenerationOnPerson = (person: Person, state: State) => {
   let { speed, direction, x, y, sickness, status } = person;
+
+  // Move the person in the direction they were going
   x += Math.sin(direction) * speed;
   y += Math.cos(direction) * speed;
 
+  // Bounce them if they hit the edges of the board
   if (
     x <= state.radius ||
     y <= state.radius ||
@@ -74,6 +79,7 @@ export const runGenerationOnPerson = (person: Person, state: State) => {
     speed = state.motion;
   }
 
+  // If they are sick then decrease their sickness with each generation
   if (status === Status.Sick && sickness > 0) {
     sickness -= 0.2;
     if (sickness < 1) {
@@ -92,13 +98,16 @@ export const runGenerationOnPerson = (person: Person, state: State) => {
   };
 }
 
+// Run an entire generation on all the people in the simulation
 export const runGeneration = (state: State) => {
   if (state.paused) {
     return state;
   }
 
+  // Adjust each persons status
   const people: Person[] = state.people.map((person) => runGenerationOnPerson(person, state));
 
+  // Load up a quadtree with just the healthy (target) folks for efficient searching
   const qt = quadtree()
     .extent([[0, 0], [BOX_SIZE, BOX_SIZE]])
     .addAll(
@@ -107,6 +116,7 @@ export const runGeneration = (state: State) => {
         .map(({ x, y, id }) => ([x, y, id])) as unknown) as [number,number][]
     );
 
+  // Go through all the sick folks and see if they infect anyone
   people
     .filter(({ status }) => status === Status.Sick)
     .forEach((person) => {
@@ -120,6 +130,7 @@ export const runGeneration = (state: State) => {
       }
     });
 
+  // Record the statistics of this generation
   const counts: Counts = people.reduce((a: Counts, { status }) => {
     a[status] += 1;
     return a;
@@ -145,6 +156,7 @@ export const runGeneration = (state: State) => {
   };
 };
 
+// Create the initial status
 export const createInitialState = (state: State = {
   motion: 3,
   radius: 5,
