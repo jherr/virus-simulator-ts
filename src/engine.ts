@@ -5,36 +5,42 @@ import {
   HISTORY
 } from './constants';
 
+export enum Status {
+  Recovered = -1,             // Recovered is when someone was sick and is now immune
+  Healthy = 0,                // A healthy person who can potentially become infected
+  Sick = 1                    // A person who is actively sick and contageous
+}
+
 export interface Person {
-  id: number;
-  x: number;
-  y: number;
-  direction: number;
-  speed: number;
-  status: -1 | 0 | 1;
-  sickness: number;
+  id: number;                 // Unique ID
+  x: number;                  // X Position
+  y: number;                  // Y Position
+  direction: number;          // Movement direction in radians
+  speed: number;              // Movement speed in pixels
+  status: Status;             // Health status
+  sickness: number;           // Countdown timer when sick
 }
 
 export interface Counts {
-  [-1]: number;
-  0: number;
-  1: number;
+  [Status.Recovered]: number; // Number of recovered people
+  [Status.Sick]: number;      // Number of sick people
+  [Status.Healthy]: number;   // Number of healthy people
 }
 
 export interface Generation {
-  generation: number;
-  counts: Counts;
+  generation: number;         // The generation index
+  counts: Counts;             // The counts of the current generation
 }
 
 export interface State {
-  paused: boolean;
-  people: Person[];
-  motion: number;
-  radius: number;
-  infectionRate: number;
-  infectionLength: number;
-  generations: Generation[];
-  generation: number;
+  paused: boolean;            // True if the simulation is paused
+  people: Person[];           // The people in the simulation
+  motion: number;             // The motion control
+  radius: number;             // The infection radius
+  infectionRate: number;      // How contageous the infection is
+  infectionLength: number;    // How long the infection lasts
+  generations: Generation[];  // The history of the generations
+  generation: number;         // The current generation index
 }
 
 export const generatePeople = (state: State): Person[] =>
@@ -46,7 +52,7 @@ export const generatePeople = (state: State): Person[] =>
       y: Math.random() * BOX_SIZE,
       direction: Math.random() * (Math.PI * 2),
       speed: state.motion,
-      status: i === 0 ? 1 : 0,
+      status: i === 0 ? Status.Sick : Status.Healthy,
       sickness: state.infectionLength,
     }));
 
@@ -68,7 +74,7 @@ export const runGenerationOnPerson = (person: Person, state: State) => {
     speed = state.motion;
   }
 
-  if (status === 1 && sickness > 0) {
+  if (status === Status.Sick && sickness > 0) {
     sickness -= 0.2;
     if (sickness < 1) {
       status = -1;
@@ -97,18 +103,18 @@ export const runGeneration = (state: State) => {
     .extent([[0, 0], [BOX_SIZE, BOX_SIZE]])
     .addAll(
       (people
-        .filter(({ status }) => status === 0)
+        .filter(({ status }) => status === Status.Healthy)
         .map(({ x, y, id }) => ([x, y, id])) as unknown) as [number,number][]
     );
 
   people
-    .filter(({ status }) => status === 1)
+    .filter(({ status }) => status === Status.Sick)
     .forEach((person) => {
       const found = qt.find(person.x, person.y, state.radius);
       if (found) {
         const id = ((found as unknown) as [number, number, number])[2];
         if (Math.random() < state.infectionRate) {
-          people[id].status = 1;
+          people[id].status = Status.Sick;
           people[id].sickness = state.infectionLength;
         }
       }
@@ -118,9 +124,9 @@ export const runGeneration = (state: State) => {
     a[status] += 1;
     return a;
   }, {
-    [-1]: 0,
-    0: 0,
-    1: 0,
+    [Status.Healthy]: 0,
+    [Status.Sick]: 0,
+    [Status.Recovered]: 0,
   });
   state.generations.push({
     generation: state.generation,
@@ -135,7 +141,7 @@ export const runGeneration = (state: State) => {
     people,
     generations: state.generations,
     generation: state.generation + 1,
-    paused: counts[1] === 0,
+    paused: counts[Status.Sick] === 0,
   };
 };
 

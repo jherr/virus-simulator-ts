@@ -6,7 +6,8 @@ import {
 } from '../constants';
 
 import {
-  Person
+  Person,
+  Status
 } from '../engine'
 
 const Simulator = ({ people, radius }: {
@@ -36,7 +37,7 @@ const Simulator = ({ people, radius }: {
               fill: COLORS[status]
             }}
           />
-          {status === 1 && (
+          {status === Status.Sick && (
             <circle
               cx={x}
               cy={y}

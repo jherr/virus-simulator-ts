@@ -6,7 +6,8 @@ import {
 } from '../constants';
 
 import {
-  Generation
+  Generation,
+  Status
 } from '../engine'
 
 const GenerationsGraph = ({ generations }: { generations: Generation[] }) => {
@@ -21,22 +22,22 @@ const GenerationsGraph = ({ generations }: { generations: Generation[] }) => {
           <g
             key={generation}
           >
-            {counts[-1] > 0 && (<rect
+            {counts[Status.Recovered] > 0 && (<rect
               x={`${index * widthFactor}%`}
               width={`${widthFactor}%`}
               y={0}
-              height={counts[-1] / 2}
+              height={counts[Status.Recovered] / 2}
               style={{
-                fill: COLORS[-1]
+                fill: COLORS[Status.Recovered]
               }}
             />)}
-            {counts[1] > 0 && (<rect
+            {counts[Status.Sick] > 0 && (<rect
               x={`${index * widthFactor}%`}
               width={`${widthFactor}%`}
-              y={(PEOPLE - counts[1]) / 2}
-              height={counts[1] / 2}
+              y={(PEOPLE - counts[Status.Sick]) / 2}
+              height={counts[Status.Sick] / 2}
               style={{
-                fill: COLORS[1]
+                fill: COLORS[Status.Sick]
               }}
             />)}
           </g>
